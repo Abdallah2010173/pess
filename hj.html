@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Page Refresh Counter and IP</title>
+  <script>
+    // دالة لزيادة العداد عند كل تحديث للصفحة
+    function incrementRefreshCount() {
+      let refreshCount = localStorage.getItem('refreshCount');  // جلب العدادات المخزنة
+
+      // إذا كانت المرة الأولى للتحديث، قم بتعيين العداد إلى 0
+      if (refreshCount === null) {
+        refreshCount = 0;
+      }
+
+      // زيادة العداد
+      refreshCount = parseInt(refreshCount) + 1;
+
+      // تخزين العدد المحدث في localStorage
+      localStorage.setItem('refreshCount', refreshCount);
+
+      // عرض العداد في الصفحة
+      document.getElementById('refreshCount').textContent = 'Page refreshed ' + refreshCount + ' times.';
+
+      // إرسال الحدث إلى Google Analytics (عدد التحديثات)
+      gtag('event', 'page_refresh', {
+        'refresh_count': refreshCount
+      });
+    }
+
+    // الحصول على عنوان IP من خدمة ipify
+    function getIP(data) {
+      const userIP = data.ip;  // تخزين الـ IP
+      const deviceName = navigator.platform;  // الحصول على اسم النظام (مثل Windows، MacOS، Linux، إلخ)
+
+      // عرض الـ IP واسم الجهاز في الصفحة
+      document.getElementById('ip').textContent = 'Your IP is: ' + userIP;
+      document.getElementById('device').textContent = 'Device: ' + deviceName;
+
+      // إرسال البيانات إلى الخادم الخارجي
+      sendDataToExternalServer(userIP, deviceName);
+    }
+
+    // إرسال بيانات الـ IP واسم الجهاز إلى الخادم الخارجي
+    function sendDataToExternalServer(ip, device) {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', 'https://example.com/receiveData', true);  // استبدل الرابط بهذا الموقع الخارجي
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      
+      const data = {
+        ip: ip,
+        device: device,
+        refreshCount: localStorage.getItem('refreshCount'),  // إرسال عدد التحديثات أيضًا
+        timestamp: new Date().toISOString()  // إضافة الوقت الذي تم فيه التحديث
+      };
+
+      xhr.send(JSON.stringify(data));  // إرسال البيانات إلى الموقع الخارجي
+    }
+  </script>
+  <!-- Google Analytics 4 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-XXXXXXX');  // استبدل 'G-XXXXXXX' برقم القياس الخاص بك
+  </script>
+</head>
+<body onload="incrementRefreshCount()">
+  <h1>Welcome to My Page!</h1>
+  
+  <!-- عرض عنوان IP هنا -->
+  <p id="ip">Loading your IP...</p>
+  
+  <!-- عرض اسم الجهاز هنا -->
+  <p id="device">Loading device information...</p>
+  
+  <!-- عرض عدد مرات التحديث هنا -->
+  <p id="refreshCount">Page refreshed 0 times.</p>
+
+  <script>
+    // الحصول على عنوان IP باستخدام خدمة ipify
+    const script = document.createElement('script');
+    script.src = 'https://api.ipify.org?format=jsonp&callback=getIP';  // استدعاء دالة getIP
+    document.body.appendChild(script);  // إضافة السكربت إلى الصفحة
+  </script>
+</body>
+</html>
